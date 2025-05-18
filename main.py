@@ -24,80 +24,27 @@ import AgrionDB_S as S_S
 SD = S_Def.def_val()
 df_all = pd.DataFrame()
 
+
+def SetWebLayout():
+    # AgrionDB読込ボタン
+    F_Inp_Btns = html.Button("ファイル指定", id='Inp_btn', n_clicks=0)
+    F_Inp_Btn   = dcc.Upload(id='agfile_btn',children=F_Inp_Btns, multiple=True)
+
+    # 栽培日誌ダウンロードボタン
+    F_Note_Btns  = html.Button("栽培日誌作成",id="note_btn", n_clicks=0)
+    F_Note_Btn   = dcc.Download(id="note_dwn")
+
+    # Layout定義
+    Area_Ctl    = html.Div(html.Div([F_Inp_Btn,F_Note_Btn,F_Note_Btns]))
+
+    return Area_Ctl
+
 ####################
 # 3.0 Dash環境設定
 ####################
 app             = dash.Dash(__name__,update_title='しばらくお待ちください')           # App定義
-app.layout      = S_S.SetWebLayout()            # Layout定義
-
-########################################################################
-# 4.    コールバック準備
-########################################################################
-# 4.1   AgrionDB読込
-@app.callback(  Output('agfile_btn','style'),
-                Input('agfile_btn', 'filename'), Input('agfile_btn', 'contents'),
-                prevent_initial_call=True )
-def UploadBtn(InXlsName,contents):
-    # 0. 初期設定
-    global      df_all
-    work_flg    = False
-    sehi_flg    = False
-    yaku_flg    = False
-    kiki_flg    = False
-    memb_flg    = False
-
-    # 1. ArigionDB読込
-    for content_tmp,InXName in zip(contents,InXlsName):
-        # DB読込
-        df_tmp, Flg = S_S.AgrionDB_Read(InXName,content_tmp)
-        print(InXName,Flg)
-        # DB種類判別
-        if Flg == False: continue
-        
-        if   "作業実績"         in InXName:     
-            df_work     = df_tmp
-            work_flg    = True
-        elif "施肥記録"         in InXName:     
-            df_sehi     = df_tmp
-            sehi_flg    = True
-        elif "農薬使用記録"     in InXName:     
-            df_yaku     = df_tmp
-            yaku_flg    = True
-        elif "機材使用実績"     in InXName:     
-            df_kiki     = df_tmp
-            kiki_flg    = True
-        elif "メンバー活動実績" in InXName:     
-            df_memb     = df_tmp
-            memb_flg    = True
-        else:           continue
-    if work_flg == False:
-        print("作業実績ファイルを指定してください")
-        raise PreventUpdate
-
-    # DB結合
-    df_out      = df_work
-    if sehi_flg == True :
-        df_out  = S_S.df_marge(df_out,df_sehi)
-    if yaku_flg == True :
-        df_out  = S_S.df_marge(df_out,df_yaku)
-    if kiki_flg == True :
-        df_out  = S_S.df_marge(df_out,df_kiki)
-    if memb_flg == True :
-        df_out  = S_S.df_marge(df_out,df_memb)
-    df_all = df_out
-
-    return []
-
-# 4.2 栽培日誌ダウンロード
-@app.callback(  Output('note_dwn','data'),
-                Input('note_btn', 'n_clicks'),
-                prevent_initial_call=True )
-def UploadBtn(n_clicks):
-    # 栽培日誌作成
-    df_ad = S_S.AgrionDialy_Create(df_all)
-
-    return dcc.send_bytes(lambda b: b.write(S_S.to_excel_bytes_io(df_all,df_ad)), "df_out.xlsx")
-
+app.layout      = SetWebLayout()            # Layout定義
+server          = app.server
 
 
 
