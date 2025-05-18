@@ -6,9 +6,6 @@
 #################################################################
 import AgrionDB_def  as S_Def
 import dash  
-#from dash_extensions import Download
-#import dash_core_components as dcc
-#import dash_html_components as html
 from dash import Dash
 from dash import Dash, html, dcc, dash_table
 import json
